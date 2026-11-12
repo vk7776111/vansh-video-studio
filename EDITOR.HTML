@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vansh Video Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090d18;color:white;font-family:Arial}
+header{padding:18px;background:#111a2c;
+display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:23px;font-weight:bold;color:#78a0ff}
+main{padding:15px;max-width:1300px;margin:auto}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:15px}
+.panel{background:#151f32;border:1px solid #293754;
+border-radius:12px;padding:15px;margin-bottom:15px}
+h3{margin-top:0;color:#9bb5ff}
+.preview{background:#000;border-radius:10px;
+min-height:240px;display:flex;align-items:center;
+justify-content:center;overflow:hidden}
+video{width:100%;max-height:500px}
+input,select{width:100%;margin:8px 0 15px}
+input[type=text],select{padding:11px;background:#0c1424;
+color:white;border:1px solid #34415e;border-radius:7px}
+button,.upload{background:#557cff;color:white;
+border:0;padding:11px 15px;border-radius:7px;
+cursor:pointer;font-weight:bold;display:inline-block}
+button:hover,.upload:hover{background:#7695ff}
+button:disabled{opacity:.5}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.timeline{background:#0b1322;padding:15px;border-radius:8px}
+.track{height:38px;background:#293e67;border-radius:5px;
+margin-top:10px;padding:10px;color:#dce6ff}
+label{color:#b7c5e2;font-size:13px}
+small{color:#9baac5}
+@media(max-width:750px){
+.layout{grid-template-columns:1fr}
+header{flex-wrap:wrap}
+.preview{min-height:190px}
+}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">🎬 VANSH VIDEO STUDIO</div>
+ <div>PRO EDITION | 4K</div>
+</header>
+
+<main>
+<div class="layout">
+
+<section>
+<div class="panel">
+<h3>Video Preview</h3>
+<div class="preview">
+<div id="welcome">📁 Upload Your Video</div>
+<video id="video" controls hidden></video>
+</div>
+
+<div class="tools">
+<label class="upload">
+📂 Import Video
+<input type="file" id="file" accept="video/*" hidden>
+</label>
+<button onclick="play()">▶ Play</button>
+<button onclick="pause()">Ⅱ Pause</button>
+<button onclick="resetVideo()">↺ Reset</button>
+</div>
+</div>
+
+<div class="panel">
+<h3>✂ Video Timeline</h3>
+<div class="timeline">
+<label>Start Time</label>
+<input id="start" type="range" min="0" max="100" value="0" step=".1">
+<label>End Time</label>
+<input id="end" type="range" min="0" max="100" value="100" step=".1">
+<div class="track">🎞 VIDEO TRACK 01</div>
+<div class="track" style="background:#365c50">🎵 AUDIO TRACK 02</div>
+</div>
+</div>
+</section>
+
+<aside>
+<div class="panel">
+<h3>⚙ Editing Tools</h3>
+
+<label>Video Filter</label>
+<select id="filter" onchange="applyFilter()">
+<option value="none">Original</option>
+<option value="grayscale(1)">Black & White</option>
+<option value="sepia(1)">Sepia</option>
+<option value="contrast(1.4)">Contrast</option>
+<option value="brightness(1.3)">Brightness</option>
+<option value="saturate(2)">Vibrant</option>
+</select>
+
+<label>Playback Speed</label>
+<select id="speed" onchange="changeSpeed()">
+<option value="0.5">0.5x</option>
+<option value="1" selected>1x Normal</option>
+<option value="1.5">1.5x</option>
+<option value="2">2x</option>
+</select>
+
+<label>Volume</label>
+<input type="range" id="volume" min="0" max="1"
+step=".05" value="1" oninput="changeVolume()">
+
+<label>Text Overlay</label>
+<input type="text" id="caption" placeholder="Enter your title">
+
+<label>Export Resolution</label>
+<select id="resolution">
+<option value="1280,720">720p HD</option>
+<option value="1920,1080" selected>1080p Full HD</option>
+<option value="3840,2160">4K Ultra HD</option>
+</select>
+
+<button onclick="exportVideo()" id="export"
+style="width:100%">⬇ EXPORT VIDEO</button>
+<p><small>Export format: WebM. 4K export requires a capable device and browser.</small></p>
+<div id="status"></div>
+</div>
+</aside>
+
+</div>
+</main>
+
+<script>
+const video=document.getElementById('video');
+const file=document.getElementById('file');
+let url=null,duration=0;
+
+file.onchange=e=>{
+ const f=e.target.files[0];
+ if(!f)return;
+ if(url)URL.revokeObjectURL(url);
+ url=URL.createObjectURL(f);
+ video.src=url;
+ video.hidden=false;
+ document.getElementById('welcome').hidden=true;
+ video.onloadedmetadata=()=>{
+  duration=video.duration;
+  start.max=duration;
+  end.max=duration;
+  end.value=duration;
+  start.value=0;
+  document.getElementById('status').textContent=
+  'Video Loaded: '+duration.toFixed(1)+' seconds';
+ };
+};
+
+function play(){
+ if(video.src){
+  const s=Number(start.value);
+  const e=Number(end.value);
+  if(video.currentTime<s || video.currentTime>=e)
+   video.currentTime=s;
+  video.play();
+ }
+}
+function pause(){video.pause()}
+function resetVideo(){
+ video.pause();
+ video.currentTime=0;
+ start.value=0;
+ end.value=duration;
+}
+video.addEventListener('timeupdate',()=>{
+ if(video.currentTime>=Number(end.value)){
+  video.pause();
+  video.currentTime=Number(start.value);
+ }
+});
+start.oninput=()=>{
+ if(Number(start.value)>=Number(end.value))
+ start.value=Math.max(0,Number(end.value)-.1);
+ video.currentTime=Number(start.value);
+};
+end.oninput=()=>{
+ if(Number(end.value)<=Number(start.value))
+ end.value=Math.min(duration,Number(start.value)+.1);
+};
+function applyFilter(){
+ video.style.filter=document.getElementById('filter').value;
+}
+function changeSpeed(){
+ video.playbackRate=Number(document.getElementById('speed').value);
+}
+function changeVolume(){
+ video.volume=Number(document.getElementById('volume').value);
+}
+
+async function exportVideo(){
+ if(!video.src || !duration){
+  alert('Please upload a video first!');
+  return;
+ }
+ if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){
+  alert('Video export is not supported in this browser. Try Chrome or Edge.');
+  return;
+ }
+ const button=document.getElementById('export');
+ button.disabled=true;
+ const status=document.getElementById('status');
+ status.textContent='Preparing export...';
+
+ const [w,h]=document.getElementById('resolution').value.split(',').map(Number);
+ const canvas=document.createElement('canvas');
+ canvas.width=w;canvas.height=h;
+ const ctx=canvas.getContext('2d');
+ const stream=canvas.captureStream(30);
+
+ if(video.captureStream){
+  try{
+   video.captureStream().getAudioTracks().forEach(t=>stream.addTrack(t));
+  }catch(e){}
+ }
+
+ const mime=['video/webm;codecs=vp9,opus',
+ 'video/webm;codecs=vp8,opus','video/webm']
+ .find(x=>MediaRecorder.isTypeSupported(x));
+
+ if(!mime){
+  alert('WebM export is not supported.');
+  button.disabled=false;
+  return;
+ }
+
+ let recorder;
+ try{recorder=new MediaRecorder(stream,{mimeType:mime});}
+ catch(e){alert('Export could not start.');button.disabled=false;return;}
+
+ const chunks=[];
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ recorder.onstop=()=>{
+  const blob=new Blob(chunks,{type:mime});
+  const download=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=download;a.download='Vansh-Edited-Video.webm';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(download),60000);
+  stream.getTracks().forEach(t=>t.stop());
+  button.disabled=false;
+  status.textContent='Export Complete!';
+ };
+
+ const oldTime=video.currentTime;
+ const oldRate=video.playbackRate;
+ const oldFilter=video.style.filter;
+ const s=Number(start.value),e=Number(end.value);
+ const caption=document.getElementById('caption').value;
+ let animation;
+
+ function draw(){
+  ctx.filter=document.getElementById('filter').value;
+  ctx.drawImage(video,0,0,w,h);
+  if(caption){
+   ctx.filter='none';
+   ctx.font='bold '+Math.round(w*.045)+'px Arial';
+   ctx.textAlign='center';
+   ctx.lineWidth=5;ctx.strokeStyle='black';
+   ctx.fillStyle='white';
+   ctx.strokeText(caption,w/2,h-65);
+   ctx.fillText(caption,w/2,h-65);
+  }
+  if(!video.paused && video.currentTime<e){
+   animation=requestAnimationFrame(draw);
+  }else if(recorder.state==='recording'){
+   cancelAnimationFrame(animation);
+   video.pause();
+   recorder.stop();
+   video.currentTime=oldTime;
+   video.playbackRate=oldRate;
+   video.style.filter=oldFilter;
+  }
+ }
+
+ video.pause();
+ video.currentTime=s;
+ video.playbackRate=oldRate;
+
+ try{
+  await video.play();
+  recorder.start(250);
+  draw();
+  status.textContent='Exporting... Please wait.';
+ }catch(error){
+  if(recorder.state==='recording')recorder.stop();
+  stream.getTracks().forEach(t=>t.stop());
+  button.disabled=false;
+  status.textContent='Could not export. Try pressing Play first.';
+ }
+}
+</script>
+</body>
+</html>
